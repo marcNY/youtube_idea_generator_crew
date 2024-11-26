@@ -1,0 +1,182 @@
+filter_comments_task:
+  description: >
+    Identify and filter actionable comments that can serve as video ideas.
+    The goal is to keep only comments that can potentially inspire new content,
+    especially requests, suggestions, or questions directly related to video topics.
+    Here are some examples to guide you:
+
+    Input:
+    [
+      [
+        "video_title": "CrewAI Flows Crash Course",
+        "comment": "Can you please show how to use Flows with RAG",
+        "video_id": "123",
+        "comment_id": "abc"
+      ],
+      [
+        "video_title": "CrewAI Flows Crash Course",
+        "comment": "this is gold, i love you maaaaan",
+        "video_id": "123",
+        "comment_id": "xyz"
+      ],
+      [
+        "video_title": "CrewAI Flows Crash Course",
+        "comment": "Thank you for excellent contents! Don't stop!",
+        "video_id": "123",
+        "comment_id": "xyz"
+      ]
+    ]
+
+    In this example, only the first comment should be returned, as it represents a request for a new video.
+    The other comments are positive feedback but not actionable for new content creation.
+    Also, filter out spam or irrelevant comments.
+    Additionally, ensure that the comments are unique and not duplicates.
+    Finally, make sure the comment could be a potential video idea.
+
+    Here are the comments that you need to analyze:
+    {comments}
+
+  expected_output: >
+    Return an array of actionable comments, each containing:
+    - video_title
+    - comment
+    - video_id
+    - comment_id
+
+    Example Output:
+    [
+      [
+        "video_title": "CrewAI Flows Crash Course",
+        "comment": "Can you please show how to use Flows with RAG",
+        "video_id": "123",
+        "comment_id": "abc"
+      ]
+    ]
+  agent: comment_filter_agent
+
+generate_video_ideas_task:
+  description: >
+    Convert each actionable comment into a video idea with a structured title and description.
+    Include the original comment details as well for reference.
+
+    Input Example:
+    [
+      [
+        "video_title": "CrewAI Flows Crash Course",
+        "comment": "Can you please show how to use Flows with RAG",
+        "video_id": "123",
+        "comment_id": "abc"
+      ]
+    ]
+
+    From this input, generate a title and description that could guide video creation.
+
+  expected_output: >
+    Each actionable comment should be transformed into an object containing:
+    - video_title: A descriptive title for the video idea.
+    - description: A brief summary explaining what the video will cover.
+    - video_id: The original video_id from the input.
+    - comment_id: The original comment_id from the input.
+
+    Example Output:
+    [
+      [
+        "video_title": "CrewAI Flows RAG Crash Course",
+        "description": "In this tutorial, talk about how you can use RAG inside of your flows.",
+        "video_id": "123",
+        "comment_id": "abc"
+      ]
+    ]
+  agent: video_idea_generator_agent
+
+research_video_ideas_task:
+  description: >
+    Conduct research on YouTube to identify similar videos based on each video idea's title.
+    For each generated video idea, search YouTube and gather details on comparable videos,
+    including the title, URL, and view count of each related video.
+
+    Input Example:
+    [
+      [
+        "video_title": "CrewAI Flows RAG Crash Course",
+        "description": "In this tutorial, talk about how you can use RAG inside of your flows.",
+        "video_id": "123",
+        "comment_id": "abc"
+      ]
+    ]
+
+    Research on YouTube for this video title and collect information about similar videos.
+
+  expected_output: >
+    Enrich each video idea with a "research" field that includes an array of relevant YouTube videos
+    in the following format:
+
+    - title: Title of a similar video.
+    - url: Direct link to the similar video.
+    - view_count: View count of the similar video.
+
+    Example Output:
+    [
+      [
+        "video_title": "CrewAI Flows RAG Crash Course",
+        "description": "In this tutorial, talk about how you can use RAG inside of your flows.",
+        "video_id": "123",
+        "comment_id": "abc",
+        "research": [
+          [
+            "title": "How to use RAG tools in CrewAI",
+            "url": "https://youtube.com/123",
+            "view_count": 23456
+          ]
+        ]
+      ]
+    ]
+  agent: research_agent
+
+score_video_ideas_task:
+  description: >
+    Assign a score between 1 and 10 to each video idea based on the existing research data.
+    Videos with high view counts in the research data should receive a higher score, indicating
+    a strong market interest, while ideas with low view counts should score lower.
+
+    Input Example:
+    [
+      [
+        "video_title": "CrewAI Flows RAG Crash Course",
+        "description": "In this tutorial, talk about how you can use RAG inside of your flows.",
+        "video_id": "123",
+        "comment_id": "abc",
+        "research": [
+          [
+            "title": "How to use RAG tools in CrewAI",
+            "url": "https://youtube.com/123",
+            "view_count": 23456
+          ]
+        ]
+      ]
+    ]
+
+    Calculate a score based on view count metrics and add it to each video idea.
+
+  expected_output: >
+    Each video idea should now include:
+    - score: A value between 1 and 10 representing the potential popularity of the idea.
+
+    Example Output:
+    [
+      [
+        "score": 7,
+        "video_title": "CrewAI Flows RAG Crash Course",
+        "description": "In this tutorial, talk about how you can use RAG inside of your flows.",
+        "video_id": "123",
+        "comment_id": "abc",
+        "research": [
+          [
+            "title": "How to use RAG tools in CrewAI",
+            "url": "https://youtube.com/123",
+            "view_count": 23456
+          ]
+        ]
+      ]
+    ]
+  agent: scoring_agent
